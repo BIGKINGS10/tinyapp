@@ -76,6 +76,14 @@ app.get("/urls/:id", (req, res) => {
     delete urlDatabase[req.params.id];
     res.redirect(`http://localhost:8080/urls`)
   });
+
+  app.post("/login", (req, res) => {
+
+  const templateVars = { urls: urlDatabase, username: req.body.username };
+  res.render("urls_index", templateVars);
+
+   
+  });
   
   
 app.listen(PORT, () => {
