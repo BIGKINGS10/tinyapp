@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require('bcryptjs');
 const { getUserByEmail, findShortUrl, urlsForUser } = require("./helper_functions/allfunctions")
 const cookieParser = require('cookie-parser');
 const app = express();
@@ -160,7 +161,7 @@ app.get("/urls/:id", (req, res) => {
   app.post("/login", (req, res) => {
     if(!res.cookie['user_id']){
       const email = req.body.email;
-    const password = req.body.password;
+    const password = bcrypt.hashSync(req.body.password, 10);
     if (req.body.email === "" || req.body.password === "") {
         res.status(400).send("Cannot leave fields empty");
     } else {
@@ -170,12 +171,13 @@ app.get("/urls/:id", (req, res) => {
         if (!user) {
             res.status(403).send("User Not Found");
         } else {
-            if (password !== user.password) {
-                res.status(403).send("Email or Password does not match records");
+            if (bcrypt.compareSync(req.body.password, user.password)) {
+              // res.cookie('user_id', user.id)
+              res.cookie['user_id'] = user.id;
+              res.redirect("/urls/new");
+              
             } else {
-                // res.cookie('user_id', user.id)
-                res.cookie['user_id'] = user.id;
-                res.redirect("/urls/new");
+              res.status(403).send("Email or Password does not match records");
             }
         }
     }
@@ -217,7 +219,7 @@ app.get("/urls/:id", (req, res) => {
       users[id] = {
         "id": id,
         "email": email,
-        "password": password
+        "password": bcrypt.hashSync(password, 10)
   
       };
       console.log(users);
