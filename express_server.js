@@ -1,5 +1,5 @@
 const express = require("express");
-const { getUserByEmail } = require("./helper_functions/allfunctions")
+const { getUserByEmail, findShortUrl, urlsForUser } = require("./helper_functions/allfunctions")
 const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080; // default port 8080
@@ -25,9 +25,17 @@ function generateRandomString() {
 
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aaaaa",
+  },
+ 
 };
+
 
 const users = {
   userRandomID: {
@@ -39,6 +47,11 @@ const users = {
     id: "user2RandomID",
     email: "user2@example.com",
     password: "dishwasher-funk",
+  },
+  aaaaa: {
+    id: "aaaaa",
+    email: "aaaaa@example.com",
+    password: "aaaaa",
   },
 };
 
@@ -56,8 +69,14 @@ app.get("/urls.json", (req, res) => {
   });
 
   app.get("/urls", (req, res) => {
+    if(!res.cookie['user_id']){
+      res.status(400).send("You have to be logged to see the list of Short URLs.");
+    }
+
+    console.log(users[res.cookie['user_id']]);
+    let myUrls = urlsForUser(res.cookie['user_id'], urlDatabase)
       const templateVars = { 
-        urls: urlDatabase,
+        urls: myUrls,
         user: users[res.cookie['user_id']]
       };
   
@@ -66,14 +85,27 @@ app.get("/urls.json", (req, res) => {
   });
 
   app.post("/urls", (req, res) => {
+    if(!res.cookie['user_id']){
+      res.status(400).send("You have to be logged in to generate Short Url.");
+    }
     console.log(req.body.longURL); // Log the POST request body to the console
     console.log(generateRandomString());
     shortUrl = generateRandomString();
-    urlDatabase[shortUrl] = req.body.longURL;
+    urlDatabase[shortUrl] = {
+      longURL: req.body.longURL,
+      userID: res.cookie['user_id']
+    }
+    console.log(urlDatabase[shortUrl].longURL);
     res.redirect(`http://localhost:8080/urls/${shortUrl}`)
+
+    // urlDatabase[shortUrl].userID = res.cookie['user_id'];
+    // res.redirect(`http://localhost:8080/urls/${shortUrl}`)
   });
 
   app.get("/urls/new", (req, res) => {
+    if(!res.cookie['user_id']){
+      res.redirect('/login');
+    }
     const templateVars = { 
       user: users[res.cookie['user_id']]
     };
@@ -82,24 +114,37 @@ app.get("/urls.json", (req, res) => {
 
   
 app.get("/urls/:id", (req, res) => {
+  if(!findShortUrl(req.params.id, urlDatabase)){
+    res.status(400).send("The provided ShortURL does not exists.");
+  } else {
     const templateVars = { 
       id: req.params.id, 
-      longURL: urlDatabase[req.params.id], 
+      longURL: urlDatabase[req.params.id].longURL, 
       user: users[res.cookie['user_id']]
     };
     res.render("urls_show", templateVars);
+  }
+
+    
+
+
   });
 
   app.post("/urls/:id", (req, res) => {
     // const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
-    urlDatabase[req.params.id] = req.body.newLongUrl;
+    urlDatabase[req.params.id]['longURL'] = req.body.newLongUrl;
     res.redirect(`http://localhost:8080/urls`)
   });
 
 
   app.get("/u/:id", (req, res) => {
-    const longURL = urlDatabase[req.params.id];
-    res.redirect(longURL);
+    if(!findShortUrl(req.params.id, urlDatabase)){
+      res.status(400).send("The provided ShortURL does not exists.");
+    } else {
+      const longURL = urlDatabase[req.params.id].longURL;
+      res.redirect(longURL);
+    }
+    
   });
 
 
@@ -113,7 +158,8 @@ app.get("/urls/:id", (req, res) => {
   });
 
   app.post("/login", (req, res) => {
-    const email = req.body.email;
+    if(!res.cookie['user_id']){
+      const email = req.body.email;
     const password = req.body.password;
     if (req.body.email === "" || req.body.password === "") {
         res.status(400).send("Cannot leave fields empty");
@@ -133,6 +179,12 @@ app.get("/urls/:id", (req, res) => {
             }
         }
     }
+
+    }
+    else{
+      res.redirect("/urls");
+    }
+    
 });
 
 
