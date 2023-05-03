@@ -1,11 +1,13 @@
 const express = require("express");
 const bcrypt = require('bcryptjs');
+const methodOverride = require('method-override');
 const { getUserByEmail, findShortUrl, urlsForUser } = require("./helper_functions/allfunctions")
 const cookieSession = require('cookie-session')
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
+app.use(methodOverride('_method'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
@@ -14,6 +16,8 @@ app.use(cookieSession({
 // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))
+
+
 
 function generateRandomString() {
     let result = '';
@@ -118,7 +122,8 @@ app.get("/urls.json", (req, res) => {
   });
 
   
-app.get("/urls/:id", (req, res) => {
+// app.get("/urls/:id", (req, res) => {
+app.put("/urls/:id/edit", (req, res) => {
   if(!findShortUrl(req.params.id, urlDatabase)){
     res.status(400).send("The provided ShortURL does not exists.");
   } else {
@@ -153,7 +158,7 @@ app.get("/urls/:id", (req, res) => {
   });
 
 
-  app.post("/urls/:id/delete", (req, res) => {
+  app.delete("/urls/:id/delete", (req, res) => {
     delete urlDatabase[req.params.id];
     res.redirect(`http://localhost:8080/urls`)
   });
