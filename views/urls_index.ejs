@@ -26,6 +26,9 @@
           <tr>
             <th scope="col">Short URL ID</th>
             <th scope="col">Long URL</th>
+            <th scope="col">Date Created</th>
+            <th scope="col">No. of Visits</th>
+            <th scope="col">No. of Unique Visitors</th>
             <th scope="col">Edit</th>
             <th scope="col">Delete</th>
           </tr>
@@ -35,6 +38,9 @@
             <tr>
               <td><%= id %></td>
               <td><%= urls[id]['longURL'] %></td>
+              <td><%= urls[id]["creationDate"] %></td>
+              <td><%= urls[id]["visits"] %></td>
+              <td><%= urls[id]["uniqueVisits"] %></td>
               <td>
                 <form method="POST" action="/urls/<%= id %>/edit?_method=PUT">
                     <button type="submit">Edit</button>
